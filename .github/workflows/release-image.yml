@@ -1,0 +1,61 @@
+name: Deploy new release
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        type: choice
+        description: One of the docker projects from list.
+        required: true
+        options:
+          - alpine-core
+          - ubuntu-core
+          - tintin
+          - test-project
+      increment:
+        type: choice
+        required: true
+        description: Semantic versioning increment type
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GENERAL_PAT }}
+
+      - name: Create Empty Commit
+        run: |
+          git config user.email "dstritzel@user.noreply.github.com"
+          git config user.name "dstritzel"
+          git commit --allow-empty -m "Incrementing ${{ github.event.inputs.project }} with (${{ github.event.inputs.increment }}) version."
+
+      - name: Push Empty Commit
+        run: git push origin master # Change 'main' to your branch name
+        env:
+          GH_TOKEN: ${{ secrets.GENERAL_PAT }}
+
+      - name: Git Semantic Version
+        uses: PaulHatch/semantic-version@v5.4.0
+        id: version
+        with:
+          major_pattern: "(major)"
+          minor_pattern: "(minor)"
+          bump_each_commit: true
+          change_path: "${{ github.event.inputs.project }}"
+          namespace: "${{ github.event.inputs.project }}"
+
+      # Instead of tagging on merge, we are tagging on release or manually
+      - name: Tag Release (vX.Y.Z)
+        if: ${{ ! steps.version.outputs.changed }}
+        run: |
+          git tag ${{ steps.version.outputs.version_tag }}
+          git push origin ${{ steps.version.outputs.version_tag }}
