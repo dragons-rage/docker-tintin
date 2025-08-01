@@ -1,5 +1,15 @@
 name: Build and Deploy Container
 run-name: ${{ github.repository }} - ${{ github.actor }} by ${{ github.event_name }} ${{ github.ref }}
+
+env:
+  # TODO: maybe move to ci/cd in repo
+
+  # Used for Docker Containers
+  DOCKER_IMAGE: faliarin/tintin
+  # Used for GitHub Packages
+  GITHUB_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 on:
   workflow_dispatch:
   push:
@@ -37,10 +47,6 @@ jobs:
           branch: main
           noVersionBumpBehavior: patch
 
-      # - name: Git Semantic Version
-      #   uses: PaulHatch/semantic-version@v5.4.0
-      #   id: version
-
       - name: Echo Version
         run: echo "Version would be ${{ steps.semver.outputs.next }}"
 
@@ -48,8 +54,6 @@ jobs:
     name: Push to DockerHub
     needs: [get-next-version]
     runs-on: arc-runner-set
-    env:
-      DOCKER_IMAGE: faliarin/tintin
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -86,9 +90,6 @@ jobs:
     runs-on: arc-runner-set
     needs: [get-next-version]
     name: Push to github packages
-    env:
-      GITHUB_REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}
 
     steps:
       - name: Checkout
