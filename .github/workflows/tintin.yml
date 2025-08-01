@@ -1,4 +1,4 @@
-name: Build ${{ github.repository }}
+name: Build and Deploy Container
 run-name: ${{ github.repository }} - ${{ github.actor }} by ${{ github.event_name }} ${{ github.ref }}
 on:
   workflow_dispatch:
